@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: ms-vidasalud-appointments
+
+  cloud:
+    azure:
+      active-directory:
+        enabled: true
+        profile:
+          tenant-id: 740ebf2a-ab64-4fd4-addc-979fa10c81ee
+        credential:
+          client-id: 297e7050-e168-489a-9679-2d791a96b6b1
+        app-id-uri: api://297e7050-e168-489a-9679-2d791a96b6b1
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+  datasource:
+    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
+    username: vidasalud
+    password: admin123
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    "[org.hibernate.SQL]": DEBUG
