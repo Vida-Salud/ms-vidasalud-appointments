@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: ms-vidasalud-appointments
@@ -7,19 +10,21 @@ spring:
       active-directory:
         enabled: true
         profile:
-          tenant-id: 740ebf2a-ab64-4fd4-addc-979fa10c81ee
+          tenant-id: ${AZURE_TENANT_ID:245aec22-d743-4c13-a6e6-dce0a19bc1cf}
         credential:
-          client-id: 297e7050-e168-489a-9679-2d791a96b6b1
-        app-id-uri: api://297e7050-e168-489a-9679-2d791a96b6b1
+          client-id: ${AZURE_CLIENT_ID:fd189494-2ea3-4c54-91ed-5b5ddd644163}
+        # Si no se define AZURE_APP_ID_URI, se arma a partir del client-id.
+        app-id-uri: ${AZURE_APP_ID_URI:api://${AZURE_CLIENT_ID:fd189494-2ea3-4c54-91ed-5b5ddd644163}}
 
   mvc:
     problemdetails:
       enabled: true
 
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
-    username: vidasalud
-    password: admin123
+    # En docker-compose, DB_HOST es el nombre del servicio de Oracle.
+    url: jdbc:oracle:thin:@//${DB_HOST:localhost}:${DB_PORT:1521}/${DB_SERVICE:XEPDB1}
+    username: ${DB_USERNAME:vidasalud}
+    password: ${DB_PASSWORD:admin123}
     driver-class-name: oracle.jdbc.OracleDriver
 
   jpa:
