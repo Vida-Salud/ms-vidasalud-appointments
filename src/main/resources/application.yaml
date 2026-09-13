@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8090
 
 spring:
   application:
@@ -22,7 +22,7 @@ spring:
 
   datasource:
     # En docker-compose, DB_HOST es el nombre del servicio de Oracle.
-    url: jdbc:oracle:thin:@//${DB_HOST:localhost}:${DB_PORT:1521}/${DB_SERVICE:XEPDB1}
+    url: jdbc:oracle:thin:@//${DB_HOST:localhost}:${DB_PORT:1522}/${DB_SERVICE:XEPDB1}
     username: ${DB_USERNAME:vidasalud}
     password: ${DB_PASSWORD:admin123}
     driver-class-name: oracle.jdbc.OracleDriver
