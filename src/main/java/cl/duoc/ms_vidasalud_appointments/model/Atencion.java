@@ -13,21 +13,11 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Atención médica agendada. Es la raíz del dominio de este microservicio.
- *
- * Los campos paciente, servicio y box son String por ahora: en el diseño final
- * serán referencias a ms-vidasalud-catalog, pero no se acopla todavía.
- */
+
 @Entity
 @Table(name = "ATENCION")
 public class Atencion {
 
-    /**
-     * En Oracle 12c+ esto se traduce a "ID NUMBER(19,0) GENERATED AS IDENTITY".
-     * Nota: con IDENTITY Hibernate no puede agrupar inserts en batch, porque
-     * necesita leer el ID generado justo después de cada INSERT.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
@@ -39,28 +29,20 @@ public class Atencion {
     @Column(name = "SERVICIO", nullable = false, length = 100)
     private String servicio;
 
-    /** El box puede no estar asignado cuando la atención recién se solicita. */
     @Column(name = "BOX", length = 50)
     private String box;
 
-    /** Fecha y hora en que se atenderá al paciente. Oracle: TIMESTAMP. */
     @Column(name = "FECHA_HORA", nullable = false)
     private LocalDateTime fechaHora;
 
-    /**
-     * EnumType.STRING guarda el nombre del estado ("SOLICITADA") en lugar de su
-     * posición numérica. Con ORDINAL, reordenar el enum corrompería los datos
-     * existentes en silencio.
-     */
+
     @Enumerated(EnumType.STRING)
     @Column(name = "ESTADO", nullable = false, length = 20)
     private EstadoAtencion estado;
 
-    /** Auditoría: cuándo se creó el registro. La asigna @PrePersist, no el cliente. */
     @Column(name = "FECHA_CREACION", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
-    /** JPA exige un constructor sin argumentos para poder instanciar por reflexión. */
     protected Atencion() {
     }
 
@@ -72,10 +54,7 @@ public class Atencion {
         this.estado = EstadoAtencion.SOLICITADA;
     }
 
-    /**
-     * Se ejecuta justo antes del INSERT. Así la fecha de creación nunca depende
-     * de que el service se acuerde de ponerla, ni de lo que mande el cliente.
-     */
+
     @PrePersist
     private void alCrear() {
         this.fechaCreacion = LocalDateTime.now();

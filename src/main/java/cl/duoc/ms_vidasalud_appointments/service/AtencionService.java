@@ -49,7 +49,6 @@ public class AtencionService {
         return toResponse(atencionRepository.save(atencion));
     }
 
-    /** Busca una atención por id. Responde 404 si no existe. */
     public AtencionResponse buscarPorId(Long id) {
         return toResponse(buscarEntidad(id));
     }
@@ -103,7 +102,6 @@ public class AtencionService {
         }
     }
 
-    /** Rechaza la edición si la atención ya no está en un estado editable. */
     private void validarEditable(Atencion atencion) {
         if (!ESTADOS_EDITABLES.contains(atencion.getEstado())) {
             throw new ResponseStatusException(
@@ -113,7 +111,6 @@ public class AtencionService {
         }
     }
 
-    /** Regla de negocio: no se agenda hacia el pasado. */
     private void validarFechaFutura(LocalDateTime fechaHora) {
         if (fechaHora.isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(

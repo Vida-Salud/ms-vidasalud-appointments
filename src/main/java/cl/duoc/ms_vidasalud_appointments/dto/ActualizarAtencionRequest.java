@@ -6,13 +6,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
-/**
- * Datos modificables de una atención existente (PUT).
- *
- * Es un record aparte de CrearAtencionRequest aunque se parezcan, porque expresa
- * una intención distinta: el paciente es inmutable (cambiarlo equivale a otra
- * atención) y el estado solo se mueve por el endpoint de transición del paso (e).
- */
+
 public record ActualizarAtencionRequest(
 
         @NotBlank(message = "El servicio es obligatorio")

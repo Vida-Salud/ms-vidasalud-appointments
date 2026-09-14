@@ -13,7 +13,6 @@ spring:
           tenant-id: ${AZURE_TENANT_ID:245aec22-d743-4c13-a6e6-dce0a19bc1cf}
         credential:
           client-id: ${AZURE_CLIENT_ID:fd189494-2ea3-4c54-91ed-5b5ddd644163}
-        # Si no se define AZURE_APP_ID_URI, se arma a partir del client-id.
         app-id-uri: ${AZURE_APP_ID_URI:api://${AZURE_CLIENT_ID:fd189494-2ea3-4c54-91ed-5b5ddd644163}}
 
   mvc:
@@ -21,7 +20,6 @@ spring:
       enabled: true
 
   datasource:
-    # En docker-compose, DB_HOST es el nombre del servicio de Oracle.
     url: jdbc:oracle:thin:@//${DB_HOST:localhost}:${DB_PORT:1521}/${DB_SERVICE:XEPDB1}
     username: ${DB_USERNAME:vidasalud}
     password: ${DB_PASSWORD:admin123}
