@@ -4,12 +4,15 @@ import cl.duoc.ms_vidasalud_appointments.dto.ActualizarAtencionRequest;
 import cl.duoc.ms_vidasalud_appointments.dto.AtencionResponse;
 import cl.duoc.ms_vidasalud_appointments.dto.CambiarEstadoRequest;
 import cl.duoc.ms_vidasalud_appointments.dto.CrearAtencionRequest;
+import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
 import cl.duoc.ms_vidasalud_appointments.model.Atencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import cl.duoc.ms_vidasalud_appointments.repository.AtencionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -25,6 +28,9 @@ public class AtencionService {
 
     @Autowired
     private AtencionRepository atencionRepository;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     private static final Map<EstadoAtencion, Set<EstadoAtencion>> TRANSICIONES_VALIDAS =
             new EnumMap<>(Map.of(
@@ -73,12 +79,23 @@ public class AtencionService {
         return toResponse(atencionRepository.save(atencion));
     }
 
+    @Transactional
     public AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request) {
         Atencion atencion = buscarEntidad(id);
         validarTransicion(atencion.getEstado(), request.nuevoEstado());
 
         atencion.setEstado(request.nuevoEstado());
-        return toResponse(atencionRepository.save(atencion));
+        Atencion guardada = atencionRepository.save(atencion);
+
+        eventPublisher.publishEvent(new AtencionEstadoCambiadoEvent(
+                guardada.getId(),
+                guardada.getPaciente(),
+                guardada.getServicio(),
+                guardada.getBox(),
+                guardada.getFechaHora(),
+                guardada.getEstado()));
+
+        return toResponse(guardada);
     }
 
     private Atencion buscarEntidad(Long id) {
