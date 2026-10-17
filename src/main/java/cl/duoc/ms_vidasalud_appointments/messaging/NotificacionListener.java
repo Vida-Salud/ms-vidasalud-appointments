@@ -12,6 +12,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * Escucha en fase {@code AFTER_COMMIT}: solo se publica cuando el nuevo estado ya quedó confirmado
  * en Oracle. Si la transacción hace rollback no se envía nada, y notify nunca recibe un comando
  * sobre un estado que no existe en la base de datos.
+ * <p>
+ * La cancelación es un evento publish-subscribe: se publica un solo mensaje en {@code cmd.fanout}
+ * con {@code type = atencion.cancelada}, y el exchange lo copia a cada cola enlazada (email y
+ * admisión). Los demás estados son comandos punto a punto por {@code cmd.direct} o {@code cmd.topic}.
  */
 @Component
 public class NotificacionListener {
@@ -39,8 +43,8 @@ public class NotificacionListener {
                 publisher.publicar(RabbitMQConfig.TOPIC_EXCHANGE,
                         RabbitMQConfig.EMAIL_CIERRE_ROUTING_KEY, evento);
             }
-            case CANCELADA -> publisher.publicar(RabbitMQConfig.TOPIC_EXCHANGE,
-                    RabbitMQConfig.EMAIL_CANCELADA_ROUTING_KEY, evento);
+            case CANCELADA -> publisher.publicar(RabbitMQConfig.FANOUT_EXCHANGE, "",
+                    RabbitMQConfig.TYPE_ATENCION_CANCELADA, evento);
             default -> {
                 // SOLICITADA y EN_ATENCION no generan comandos.
             }

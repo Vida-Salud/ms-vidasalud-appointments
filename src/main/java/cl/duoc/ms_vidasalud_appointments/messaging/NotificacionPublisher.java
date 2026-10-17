@@ -32,9 +32,17 @@ public class NotificacionPublisher {
     }
 
     public void publicar(String exchange, String routingKey, AtencionEstadoCambiadoEvent evento) {
+        publicar(exchange, routingKey, routingKey, evento);
+    }
+
+    /**
+     * Variante con el {@code type} del envelope separado de la routing key. Se usa con exchanges
+     * fanout, donde la routing key se ignora y el consumidor distingue el mensaje por su {@code type}.
+     */
+    public void publicar(String exchange, String routingKey, String type, AtencionEstadoCambiadoEvent evento) {
         MensajeComando mensaje = new MensajeComando(
                 UUID.randomUUID().toString(),
-                routingKey,
+                type,
                 Instant.now(),
                 "atencion-" + evento.atencionId(),
                 new DatosAtencion(
@@ -47,8 +55,8 @@ public class NotificacionPublisher {
 
         try {
             rabbitTemplate.convertAndSend(exchange, routingKey, mensaje);
-            log.info("Mensaje publicado [exchange={}, routingKey={}, eventId={}, atencionId={}]",
-                    exchange, routingKey, mensaje.eventId(), evento.atencionId());
+            log.info("Mensaje publicado [exchange={}, routingKey={}, type={}, eventId={}, atencionId={}]",
+                    exchange, routingKey, mensaje.type(), mensaje.eventId(), evento.atencionId());
         } catch (AmqpException e) {
             log.error("No se pudo publicar el mensaje [exchange={}, routingKey={}, atencionId={}]",
                     exchange, routingKey, evento.atencionId(), e);
