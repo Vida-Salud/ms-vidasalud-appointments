@@ -43,8 +43,8 @@ public class NotificacionListener {
                 publisher.publicar(RabbitMQConfig.TOPIC_EXCHANGE,
                         RabbitMQConfig.EMAIL_CIERRE_ROUTING_KEY, evento);
             }
-            case CANCELADA -> publisher.publicar(RabbitMQConfig.FANOUT_EXCHANGE, "",
-                    RabbitMQConfig.TYPE_ATENCION_CANCELADA, evento);
+            case CANCELADA -> publisher.publicar(RabbitMQConfig.FANOUT_EXCHANGE,
+                    RabbitMQConfig.FANOUT_SIN_ROUTING_KEY, RabbitMQConfig.TYPE_ATENCION_CANCELADA, evento);
             default -> {
                 // SOLICITADA y EN_ATENCION no generan comandos.
             }

@@ -35,6 +35,9 @@ public class RabbitMQConfig {
 
     public static final String TYPE_ATENCION_CANCELADA = "atencion.cancelada";
 
+    // Los exchanges fanout ignoran la routing key.
+    public static final String FANOUT_SIN_ROUTING_KEY = "";
+
     @Bean
     public DirectExchange directExchange() {
         return new DirectExchange(DIRECT_EXCHANGE, true, false);
