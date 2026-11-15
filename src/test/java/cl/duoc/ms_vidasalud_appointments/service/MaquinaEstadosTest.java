@@ -3,6 +3,8 @@ package cl.duoc.ms_vidasalud_appointments.service;
 import cl.duoc.ms_vidasalud_appointments.dto.AtencionResponse;
 import cl.duoc.ms_vidasalud_appointments.dto.CambiarEstadoRequest;
 import cl.duoc.ms_vidasalud_appointments.dto.CrearAtencionRequest;
+import cl.duoc.ms_vidasalud_appointments.exception.DatoInvalidoException;
+import cl.duoc.ms_vidasalud_appointments.exception.ReglaNegocioException;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
 import cl.duoc.ms_vidasalud_appointments.model.Atencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
@@ -17,7 +19,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -64,7 +65,7 @@ class MaquinaEstadosTest {
         var request = new CrearAtencionRequest("Ana", "Dental", null, LocalDateTime.of(2026, 11, 10, 8, 30));
         var personal = new Usuario("oid-op", "Operador", true);
         assertThatThrownBy(() -> service.crear(request, personal))
-                .isInstanceOf(ResponseStatusException.class);
+                .isInstanceOf(DatoInvalidoException.class);
     }
 
     static Stream<Arguments> todosLosPares() {
@@ -86,7 +87,7 @@ class MaquinaEstadosTest {
             verify(eventPublisher).publishEvent(any(AtencionEstadoCambiadoEvent.class));
         } else {
             assertThatThrownBy(() -> service.cambiarEstado(1L, new CambiarEstadoRequest(hacia)))
-                    .isInstanceOf(ResponseStatusException.class);
+                    .isInstanceOf(ReglaNegocioException.class);
             verify(atencionRepository, never()).save(any());
             verifyNoInteractions(eventPublisher);
         }
