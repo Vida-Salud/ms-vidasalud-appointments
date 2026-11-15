@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
@@ -25,7 +26,7 @@ import java.util.Set;
 
 
 @Service
-public class AtencionService {
+public class AtencionServiceImpl implements AtencionService {
 
     private static final Map<EstadoAtencion, Set<EstadoAtencion>> TRANSICIONES_VALIDAS =
             new EnumMap<>(Map.of(
@@ -45,13 +46,17 @@ public class AtencionService {
 
     private final AtencionRepository atencionRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
-    public AtencionService(AtencionRepository atencionRepository,
-                           ApplicationEventPublisher eventPublisher) {
+    public AtencionServiceImpl(AtencionRepository atencionRepository,
+                               ApplicationEventPublisher eventPublisher,
+                               Clock clock) {
         this.atencionRepository = atencionRepository;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
+    @Override
     public AtencionResponse crear(CrearAtencionRequest request, Usuario usuario) {
         validarFechaFutura(request.fechaHora());
         Atencion atencion = toEntity(request);
@@ -62,6 +67,7 @@ public class AtencionService {
         return toResponse(atencionRepository.save(atencion));
     }
 
+    @Override
     public AtencionResponse buscarPorId(Long id, Usuario usuario) {
         Atencion atencion = buscarEntidad(id);
         if (!usuario.personal() && !usuario.id().equals(atencion.getPacienteId())) {
@@ -70,6 +76,7 @@ public class AtencionService {
         return toResponse(atencion);
     }
 
+    @Override
     public List<AtencionResponse> listar(Usuario usuario, EstadoAtencion estado,
                                          LocalDate desde, LocalDate hasta) {
         String pacienteId = usuario.personal() ? null : usuario.id();
@@ -81,6 +88,7 @@ public class AtencionService {
                 .toList();
     }
 
+    @Override
     public AtencionResponse actualizar(Long id, ActualizarAtencionRequest request) {
         Atencion atencion = buscarEntidad(id);
         validarEditable(atencion);
@@ -94,6 +102,7 @@ public class AtencionService {
     }
 
     @Transactional
+    @Override
     public AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request) {
         Atencion atencion = buscarEntidad(id);
         validarTransicion(atencion.getEstado(), request.nuevoEstado());
@@ -143,7 +152,7 @@ public class AtencionService {
     }
 
     private void validarFechaFutura(LocalDateTime fechaHora) {
-        if (fechaHora.isBefore(LocalDateTime.now())) {
+        if (fechaHora.isBefore(LocalDateTime.now(clock))) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "La fecha y hora de la atención debe ser futura");
