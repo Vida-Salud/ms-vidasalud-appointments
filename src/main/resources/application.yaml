@@ -35,9 +35,6 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
 
   rabbitmq:
     # Nodos del clúster RabbitMQ (host:puerto separados por coma). Si el nodo actual cae,
@@ -54,5 +51,9 @@ spring:
 logging:
   pattern:
     correlation: "[%X{traceId:-}] "
-  level:
-    "[org.hibernate.SQL]": DEBUG
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true   # /actuator/health/liveness y /actuator/health/readiness
