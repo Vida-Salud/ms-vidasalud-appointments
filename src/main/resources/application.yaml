@@ -46,6 +46,10 @@ spring:
     username: ${RABBITMQ_USER:vidasalud}
     password: ${RABBITMQ_PASS}
     connection-timeout: 3s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
 
 logging:
   pattern:
