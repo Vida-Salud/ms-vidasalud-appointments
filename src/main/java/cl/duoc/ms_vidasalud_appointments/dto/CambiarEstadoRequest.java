@@ -7,6 +7,6 @@ import jakarta.validation.constraints.NotNull;
 public record CambiarEstadoRequest(
 
         @NotNull(message = "El nuevo estado es obligatorio")
-        EstadoAtencion nuevoEstado
+        EstadoAtencion status
 ) {
 }

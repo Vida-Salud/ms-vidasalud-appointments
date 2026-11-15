@@ -26,7 +26,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/atenciones")
+@RequestMapping("/api/{version}/appointments")
 @PreAuthorize("hasAnyAuthority('APPROLE_Admin', 'APPROLE_Operador', 'APPROLE_Cliente')")
 public class AtencionController {
 
@@ -75,7 +75,7 @@ public class AtencionController {
     }
 
     @PreAuthorize("hasAnyAuthority('APPROLE_Admin', 'APPROLE_Operador')")
-    @PutMapping("/{id}/estado")
+    @PutMapping("/{id}/status")
     public ResponseEntity<AtencionResponse> cambiarEstado(
             @PathVariable Long id,
             @Valid @RequestBody CambiarEstadoRequest request) {

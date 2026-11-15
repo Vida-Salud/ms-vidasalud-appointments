@@ -41,7 +41,7 @@ class AislamientoPacientesTest {
 
     @Test
     void clienteSoloVeSusAtenciones() throws Exception {
-        mockMvc.perform(get("/api/atenciones").with(cliente("oid-ana")))
+        mockMvc.perform(get("/api/v1/appointments").with(cliente("oid-ana")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].paciente").value("Ana"));
@@ -49,7 +49,7 @@ class AislamientoPacientesTest {
 
     @Test
     void operadorVeTodas() throws Exception {
-        mockMvc.perform(get("/api/atenciones")
+        mockMvc.perform(get("/api/v1/appointments")
                         .with(jwt().jwt(j -> j.claim("oid", "oid-op"))
                                 .authorities(new SimpleGrantedAuthority("APPROLE_Operador"))))
                 .andExpect(jsonPath("$.length()").value(2));
@@ -57,9 +57,9 @@ class AislamientoPacientesTest {
 
     @Test
     void clienteNoCambiaEstados() throws Exception {
-        mockMvc.perform(put("/api/atenciones/1/estado").with(cliente("oid-ana"))
+        mockMvc.perform(put("/api/v1/appointments/1/status").with(cliente("oid-ana"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nuevoEstado\": \"CONFIRMADA\"}"))
+                        .content("{\"status\": \"CONFIRMADA\"}"))
                 .andExpect(status().isForbidden());
     }
 

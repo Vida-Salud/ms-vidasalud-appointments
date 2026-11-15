@@ -4,16 +4,17 @@ import cl.duoc.ms_vidasalud_appointments.dto.ActualizarAtencionRequest;
 import cl.duoc.ms_vidasalud_appointments.dto.AtencionResponse;
 import cl.duoc.ms_vidasalud_appointments.dto.CambiarEstadoRequest;
 import cl.duoc.ms_vidasalud_appointments.dto.CrearAtencionRequest;
+import cl.duoc.ms_vidasalud_appointments.exception.DatoInvalidoException;
+import cl.duoc.ms_vidasalud_appointments.exception.RecursoNoEncontradoException;
+import cl.duoc.ms_vidasalud_appointments.exception.ReglaNegocioException;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
 import cl.duoc.ms_vidasalud_appointments.model.Atencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import cl.duoc.ms_vidasalud_appointments.repository.AtencionRepository;
 import cl.duoc.ms_vidasalud_appointments.security.Usuario;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -71,7 +72,7 @@ public class AtencionServiceImpl implements AtencionService {
     public AtencionResponse buscarPorId(Long id, Usuario usuario) {
         Atencion atencion = buscarEntidad(id);
         if (!usuario.personal() && !usuario.id().equals(atencion.getPacienteId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe una atención con id " + id);
+            throw new RecursoNoEncontradoException("No existe una atención con id " + id);
         }
         return toResponse(atencion);
     }
@@ -105,9 +106,9 @@ public class AtencionServiceImpl implements AtencionService {
     @Override
     public AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request) {
         Atencion atencion = buscarEntidad(id);
-        validarTransicion(atencion.getEstado(), request.nuevoEstado());
+        validarTransicion(atencion.getEstado(), request.status());
 
-        atencion.setEstado(request.nuevoEstado());
+        atencion.setEstado(request.status());
         Atencion guardada = atencionRepository.save(atencion);
 
         eventPublisher.publishEvent(new AtencionEstadoCambiadoEvent(
@@ -123,8 +124,8 @@ public class AtencionServiceImpl implements AtencionService {
 
     private Atencion buscarEntidad(Long id) {
         return atencionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "No existe una atención con id " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe una atención con id " + id));
     }
 
 
@@ -136,16 +137,14 @@ public class AtencionServiceImpl implements AtencionService {
                     ? actual + " es un estado final y no admite cambios"
                     : "Los estados permitidos desde " + actual + " son: " + permitidos;
 
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+            throw new ReglaNegocioException(
                     "Transición inválida de " + actual + " a " + nuevo + ". " + detalle);
         }
     }
 
     private void validarEditable(Atencion atencion) {
         if (!ESTADOS_EDITABLES.contains(atencion.getEstado())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+            throw new ReglaNegocioException(
                     "No se puede modificar una atención en estado " + atencion.getEstado()
                             + ". Solo se permite en: " + ESTADOS_EDITABLES);
         }
@@ -153,8 +152,7 @@ public class AtencionServiceImpl implements AtencionService {
 
     private void validarFechaFutura(LocalDateTime fechaHora) {
         if (fechaHora.isBefore(LocalDateTime.now(clock))) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+            throw new DatoInvalidoException(
                     "La fecha y hora de la atención debe ser futura");
         }
     }
