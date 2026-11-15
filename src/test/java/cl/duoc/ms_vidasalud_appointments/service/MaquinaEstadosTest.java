@@ -2,21 +2,27 @@ package cl.duoc.ms_vidasalud_appointments.service;
 
 import cl.duoc.ms_vidasalud_appointments.dto.AtencionResponse;
 import cl.duoc.ms_vidasalud_appointments.dto.CambiarEstadoRequest;
+import cl.duoc.ms_vidasalud_appointments.dto.CrearAtencionRequest;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
 import cl.duoc.ms_vidasalud_appointments.model.Atencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import cl.duoc.ms_vidasalud_appointments.repository.AtencionRepository;
+import cl.duoc.ms_vidasalud_appointments.security.Usuario;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
@@ -42,7 +48,24 @@ class MaquinaEstadosTest {
 
     @Mock AtencionRepository atencionRepository;
     @Mock ApplicationEventPublisher eventPublisher;
-    @InjectMocks AtencionService service;
+    AtencionService service;
+
+    // 12:00 UTC del 10 de noviembre = 09:00 en Santiago (horario de verano, UTC-3)
+    private static final Clock RELOJ = Clock.fixed(Instant.parse("2026-11-10T12:00:00Z"),
+            ZoneId.of("America/Santiago"));
+
+    @BeforeEach
+    void crearServicio() {
+        service = new AtencionServiceImpl(atencionRepository, eventPublisher, RELOJ);
+    }
+
+    @Test
+    void rechazaUnaHoraQueYaPasó() {
+        var request = new CrearAtencionRequest("Ana", "Dental", null, LocalDateTime.of(2026, 11, 10, 8, 30));
+        var personal = new Usuario("oid-op", "Operador", true);
+        assertThatThrownBy(() -> service.crear(request, personal))
+                .isInstanceOf(ResponseStatusException.class);
+    }
 
     static Stream<Arguments> todosLosPares() {
         return Arrays.stream(EstadoAtencion.values()).flatMap(desde ->
