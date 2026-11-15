@@ -8,12 +8,14 @@ import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoE
 import cl.duoc.ms_vidasalud_appointments.model.Atencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import cl.duoc.ms_vidasalud_appointments.repository.AtencionRepository;
+import cl.duoc.ms_vidasalud_appointments.security.Usuario;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -50,19 +52,30 @@ public class AtencionService {
         this.eventPublisher = eventPublisher;
     }
 
-    public AtencionResponse crear(CrearAtencionRequest request) {
+    public AtencionResponse crear(CrearAtencionRequest request, Usuario usuario) {
         validarFechaFutura(request.fechaHora());
         Atencion atencion = toEntity(request);
+        if (!usuario.personal()) {
+            atencion.setPaciente(usuario.nombre());
+            atencion.setPacienteId(usuario.id());
+        }
         return toResponse(atencionRepository.save(atencion));
     }
 
-    public AtencionResponse buscarPorId(Long id) {
-        return toResponse(buscarEntidad(id));
+    public AtencionResponse buscarPorId(Long id, Usuario usuario) {
+        Atencion atencion = buscarEntidad(id);
+        if (!usuario.personal() && !usuario.id().equals(atencion.getPacienteId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe una atención con id " + id);
+        }
+        return toResponse(atencion);
     }
 
-
-    public List<AtencionResponse> listar() {
-        return atencionRepository.findAll()
+    public List<AtencionResponse> listar(Usuario usuario, EstadoAtencion estado,
+                                         LocalDate desde, LocalDate hasta) {
+        String pacienteId = usuario.personal() ? null : usuario.id();
+        return atencionRepository.buscar(pacienteId, estado,
+                        desde == null ? null : desde.atStartOfDay(),
+                        hasta == null ? null : hasta.plusDays(1).atStartOfDay())   // "to" incluye ese día
                 .stream()
                 .map(this::toResponse)
                 .toList();

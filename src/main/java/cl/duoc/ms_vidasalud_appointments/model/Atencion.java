@@ -43,6 +43,9 @@ public class Atencion {
     @Column(name = "FECHA_CREACION", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "PACIENTE_ID", length = 64)
+    private String pacienteId;   // claim oid del Cliente; null si la registró el personal
+
     protected Atencion() {
     }
 
@@ -109,6 +112,14 @@ public class Atencion {
 
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
+    }
+
+    public String getPacienteId() {
+        return pacienteId;
+    }
+
+    public void setPacienteId(String pacienteId) {
+        this.pacienteId = pacienteId;
     }
 
     /**
