@@ -8,7 +8,6 @@ import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoE
 import cl.duoc.ms_vidasalud_appointments.model.Atencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import cl.duoc.ms_vidasalud_appointments.repository.AtencionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,12 +25,6 @@ import java.util.Set;
 @Service
 public class AtencionService {
 
-    @Autowired
-    private AtencionRepository atencionRepository;
-
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
-
     private static final Map<EstadoAtencion, Set<EstadoAtencion>> TRANSICIONES_VALIDAS =
             new EnumMap<>(Map.of(
                     EstadoAtencion.SOLICITADA,  Set.of(EstadoAtencion.CONFIRMADA, EstadoAtencion.CANCELADA),
@@ -42,12 +35,20 @@ public class AtencionService {
                     EstadoAtencion.CANCELADA,   Set.of()
             ));
 
-
     private static final Set<EstadoAtencion> ESTADOS_EDITABLES = EnumSet.of(
             EstadoAtencion.SOLICITADA,
             EstadoAtencion.CONFIRMADA,
             EstadoAtencion.EN_ESPERA
     );
+
+    private final AtencionRepository atencionRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public AtencionService(AtencionRepository atencionRepository,
+                           ApplicationEventPublisher eventPublisher) {
+        this.atencionRepository = atencionRepository;
+        this.eventPublisher = eventPublisher;
+    }
 
     public AtencionResponse crear(CrearAtencionRequest request) {
         validarFechaFutura(request.fechaHora());
