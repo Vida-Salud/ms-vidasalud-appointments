@@ -6,7 +6,6 @@ import cl.duoc.ms_vidasalud_appointments.dto.CambiarEstadoRequest;
 import cl.duoc.ms_vidasalud_appointments.dto.CrearAtencionRequest;
 import cl.duoc.ms_vidasalud_appointments.service.AtencionService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,8 +23,11 @@ import java.util.List;
 @RequestMapping("/api/atenciones")
 public class AtencionController {
 
-    @Autowired
-    private AtencionService atencionService;
+    private final AtencionService atencionService;
+
+    public AtencionController(AtencionService atencionService) {
+        this.atencionService = atencionService;
+    }
 
     @PostMapping
     public ResponseEntity<AtencionResponse> crear(
