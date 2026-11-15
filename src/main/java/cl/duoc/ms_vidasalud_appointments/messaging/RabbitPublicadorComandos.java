@@ -1,11 +1,14 @@
 package cl.duoc.ms_vidasalud_appointments.messaging;
 
+import cl.duoc.ms_vidasalud_appointments.config.TraceIdFilter;
 import cl.duoc.ms_vidasalud_appointments.messaging.dto.DatosAtencion;
 import cl.duoc.ms_vidasalud_appointments.messaging.dto.MensajeComando;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -46,10 +49,12 @@ public class RabbitPublicadorComandos implements PublicadorComandos {
     @Override
     public void publicar(String exchange, String routingKey, String type, AtencionEstadoCambiadoEvent evento) {
         MensajeComando mensaje = new MensajeComando(
+                MensajeComando.VERSION_ACTUAL,
                 UUID.randomUUID().toString(),
                 type,
                 Instant.now(clock),
                 "atencion-" + evento.atencionId(),
+                MDC.get(TraceIdFilter.MDC_KEY),
                 new DatosAtencion(
                         evento.atencionId(),
                         evento.paciente(),
@@ -59,7 +64,7 @@ public class RabbitPublicadorComandos implements PublicadorComandos {
                         evento.estado().name()));
 
         try {
-            rabbitTemplate.convertAndSend(exchange, routingKey, mensaje);
+            rabbitTemplate.convertAndSend(exchange, routingKey, mensaje, new CorrelationData(mensaje.eventId()));
             log.info("Mensaje publicado [exchange={}, routingKey={}, type={}, eventId={}, atencionId={}]",
                     exchange, routingKey, mensaje.type(), mensaje.eventId(), evento.atencionId());
         } catch (AmqpException e) {
