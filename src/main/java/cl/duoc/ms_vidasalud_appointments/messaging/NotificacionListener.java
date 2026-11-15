@@ -20,9 +20,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class NotificacionListener {
 
-    private final NotificacionPublisher publisher;
+    private final PublicadorComandos publisher;
 
-    public NotificacionListener(NotificacionPublisher publisher) {
+    public NotificacionListener(PublicadorComandos publisher) {
         this.publisher = publisher;
     }
 

@@ -9,6 +9,7 @@ import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -21,16 +22,19 @@ import java.util.UUID;
  * informar como fallido un cambio de estado que sí ocurrió.
  */
 @Component
-public class NotificacionPublisher {
+public class RabbitPublicadorComandos implements PublicadorComandos {
 
-    private static final Logger log = LoggerFactory.getLogger(NotificacionPublisher.class);
+    private static final Logger log = LoggerFactory.getLogger(RabbitPublicadorComandos.class);
 
     private final RabbitTemplate rabbitTemplate;
+    private final Clock clock;
 
-    public NotificacionPublisher(RabbitTemplate rabbitTemplate) {
+    public RabbitPublicadorComandos(RabbitTemplate rabbitTemplate, Clock clock) {
         this.rabbitTemplate = rabbitTemplate;
+        this.clock = clock;
     }
 
+    @Override
     public void publicar(String exchange, String routingKey, AtencionEstadoCambiadoEvent evento) {
         publicar(exchange, routingKey, routingKey, evento);
     }
@@ -39,11 +43,12 @@ public class NotificacionPublisher {
      * Variante con el {@code type} del envelope separado de la routing key. Se usa con exchanges
      * fanout, donde la routing key se ignora y el consumidor distingue el mensaje por su {@code type}.
      */
+    @Override
     public void publicar(String exchange, String routingKey, String type, AtencionEstadoCambiadoEvent evento) {
         MensajeComando mensaje = new MensajeComando(
                 UUID.randomUUID().toString(),
                 type,
-                Instant.now(),
+                Instant.now(clock),
                 "atencion-" + evento.atencionId(),
                 new DatosAtencion(
                         evento.atencionId(),
