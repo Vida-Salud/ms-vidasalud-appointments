@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -27,20 +28,26 @@ import java.util.UUID;
  * Es tolerante a fallas, igual que {@code RabbitPublicadorComandos}: se invoca después del commit,
  * cuando el cambio de estado ya está guardado, así que un error de Kafka se registra en el log y no
  * se relanza. El envío es asíncrono; su resultado se registra en el callback.
+ * <p>
+ * Con {@code vidasalud.kafka.habilitado=false} lo reemplaza {@link SinPublicacionEventos}.
  */
 @Component
+@ConditionalOnProperty(name = "vidasalud.kafka.habilitado", havingValue = "true", matchIfMissing = true)
 public class KafkaPublicadorEventos implements PublicadorEventos {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaPublicadorEventos.class);
 
     private final KafkaTemplate<String, EventoAtencion> kafkaTemplate;
     private final Clock clock;
+    private final OrigenPeticion origenPeticion;
     private final String topico;
 
     public KafkaPublicadorEventos(KafkaTemplate<String, EventoAtencion> kafkaTemplate, Clock clock,
+                                  OrigenPeticion origenPeticion,
                                   @Value("${vidasalud.kafka.topico-eventos}") String topico) {
         this.kafkaTemplate = kafkaTemplate;
         this.clock = clock;
+        this.origenPeticion = origenPeticion;
         this.topico = topico;
     }
 
@@ -59,13 +66,13 @@ public class KafkaPublicadorEventos implements PublicadorEventos {
                 MDC.get(TraceIdFilter.MDC_KEY),
                 new DatosEventoAtencion(
                         evento.atencionId(),
-                        evento.paciente(),
                         evento.servicio(),
                         evento.box(),
                         evento.fechaHora(),
                         evento.estado().name(),
                         evento.estadoAnterior() != null ? evento.estadoAnterior().name() : null,
-                        new ActorEvento(evento.actorId(), evento.actorNombre(), evento.actorRol())));
+                        new ActorEvento(evento.actorId(), evento.actorNombre(), evento.actorRol()),
+                        origenPeticion.actual()));
         String key = String.valueOf(evento.atencionId());
 
         try {

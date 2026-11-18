@@ -51,12 +51,15 @@ spring:
   kafka:
     # Brokers del clúster Kafka. El cliente solo necesita uno vivo para descubrir el resto.
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    client-id: ${spring.application.name}         # identifica al productor en los logs y métricas del broker
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
       acks: all
       properties:
-        enable.idempotence: true
+        enable.idempotence: true                   # los reintentos no duplican ni desordenan
+        max.in.flight.requests.per.connection: 5   # máximo compatible con la idempotencia
+        linger.ms: 5                               # agrupa envíos cercanos en un mismo lote
         spring.json.add.type.headers: false
         max.block.ms: 5000
         request.timeout.ms: 5000
@@ -64,6 +67,7 @@ spring:
 
 vidasalud:
   kafka:
+    habilitado: ${KAFKA_HABILITADO:true}         # false: no se publica en Kafka (despliegues sin clúster)
     topico-eventos: appointments.events
 
 logging:

@@ -330,3 +330,17 @@ manteniendo el token de autorización del usuario.
 ## Proyecto VidaSalud
 
 Este microservicio forma parte de la arquitectura distribuida de VidaSalud y concentra la lógica de negocio relacionada con el proceso y ciclo de vida de las atenciones médicas.
+
+## Eventos en Kafka (EP5)
+
+Además de los comandos de RabbitMQ (sin cambios), cada cambio de estado confirmado se publica en el tópico
+`appointments.events` (clave = id de la atención, JSON sin cabeceras de tipo). Lo consumen ms-vidasalud-report
+(KPIs) y ms-vidasalud-audit (timeline). El evento lleva quién (`actor`) y desde dónde (`origen`), pero no el nombre
+del paciente. Contrato: `infra/docs/eventos-v1.md`.
+
+| Variable | Valor por defecto | Uso |
+| --- | --- | --- |
+| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092,localhost:9093,localhost:9094` | Brokers del clúster (`infra/kafka`) |
+| `KAFKA_HABILITADO` | `true` | `false`: no publica en Kafka (despliegues sin clúster) |
+
+Si Kafka está caído, la petición responde igual (espera como máximo `max.block.ms` = 5 s) y el error queda en el log.

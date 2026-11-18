@@ -35,6 +35,19 @@ class ArquitecturaTest {
     }
 
     @Test
+    void kafkaYRabbitNoSeMezclan() {
+        noClasses().that().resideInAPackage("..messaging.kafka..")
+                .should().dependOnClassesThat().resideInAPackage("org.springframework.amqp..")
+                .because("el productor Kafka complementa a RabbitMQ sin depender de él")
+                .check(CLASES);
+        noClasses().that().resideInAPackage("..messaging..")
+                .and().resideOutsideOfPackage("..messaging.kafka..")
+                .should().dependOnClassesThat().resideInAnyPackage("org.springframework.kafka..", "org.apache.kafka..")
+                .because("la mensajería RabbitMQ no cambia al agregar Kafka")
+                .check(CLASES);
+    }
+
+    @Test
     void laHoraSaleDelRelojInyectado() {
         noClasses().that().resideOutsideOfPackage("..model..")
                 .should().callMethod(LocalDateTime.class, "now")

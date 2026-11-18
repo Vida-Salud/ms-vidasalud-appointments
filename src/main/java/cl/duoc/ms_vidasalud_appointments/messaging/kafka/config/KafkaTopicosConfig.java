@@ -3,15 +3,19 @@ package cl.duoc.ms_vidasalud_appointments.messaging.kafka.config;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.TopicConfig;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
 /**
  * Declara el tópico de eventos de atenciones. {@code KafkaAdmin} lo crea al arrancar si no existe;
- * si ya existe con la misma configuración, la declaración no tiene efecto.
+ * si ya existe, la declaración no tiene efecto. La configuración de referencia está en
+ * infra/kafka/topics.conf (kafka-init la aplica al levantar el clúster) y los valores coinciden.
+ * Con {@code vidasalud.kafka.habilitado=false} no se declara.
  */
 @Configuration
+@ConditionalOnProperty(name = "vidasalud.kafka.habilitado", havingValue = "true", matchIfMissing = true)
 public class KafkaTopicosConfig {
 
     @Bean

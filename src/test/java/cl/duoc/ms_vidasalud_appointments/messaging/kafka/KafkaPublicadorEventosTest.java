@@ -4,6 +4,7 @@ import cl.duoc.ms_vidasalud_appointments.config.TraceIdFilter;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
 import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.ActorEvento;
 import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.EventoAtencion;
+import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.OrigenEvento;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,7 +34,8 @@ class KafkaPublicadorEventosTest {
 
     @SuppressWarnings("unchecked")
     private final KafkaTemplate<String, EventoAtencion> template = mock(KafkaTemplate.class);
-    private final KafkaPublicadorEventos publicador = new KafkaPublicadorEventos(template, RELOJ, TOPICO);
+    private final KafkaPublicadorEventos publicador = new KafkaPublicadorEventos(template, RELOJ,
+            new OrigenPeticion("ms-vidasalud-appointments"), TOPICO);
 
     @Test
     void publicaEnElTopicoConElAtencionIdComoKeyYElEnvelopeCompleto() {
@@ -54,10 +56,11 @@ class KafkaPublicadorEventosTest {
         assertThat(mensaje.correlationId()).isEqualTo("atencion-42");
         assertThat(mensaje.traceId()).isEqualTo("abc-123");
         assertThat(mensaje.payload().atencionId()).isEqualTo(42L);
-        assertThat(mensaje.payload().paciente()).isEqualTo("Ana");
         assertThat(mensaje.payload().estado()).isEqualTo("CONFIRMADA");
         assertThat(mensaje.payload().estadoAnterior()).isEqualTo("SOLICITADA");
         assertThat(mensaje.payload().actor()).isEqualTo(new ActorEvento("oid-op", "Olga Operadora", "Operador"));
+        // Sin petición HTTP en curso (test unitario) la IP es null; el servicio siempre se informa.
+        assertThat(mensaje.payload().origen()).isEqualTo(new OrigenEvento("ms-vidasalud-appointments", null));
     }
 
     @Test
