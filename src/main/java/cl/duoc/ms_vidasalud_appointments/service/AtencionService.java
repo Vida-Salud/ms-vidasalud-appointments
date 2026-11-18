@@ -19,5 +19,5 @@ public interface AtencionService {
 
     AtencionResponse actualizar(Long id, ActualizarAtencionRequest request);
 
-    AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request);
+    AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request, Usuario usuario);
 }

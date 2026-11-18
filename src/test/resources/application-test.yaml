@@ -11,6 +11,10 @@ spring:
 
   rabbitmq:
     password: solo-para-tests
+
+  kafka:
+    admin:
+      auto-create: false   # sin brokers en el CI: no crear el tópico al arrancar el contexto
   cloud:
     azure:
       active-directory:

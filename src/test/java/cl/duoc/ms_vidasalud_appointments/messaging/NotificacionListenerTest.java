@@ -75,6 +75,6 @@ class NotificacionListenerTest {
 
     private static AtencionEstadoCambiadoEvent evento(EstadoAtencion estado) {
         return new AtencionEstadoCambiadoEvent(42L, "Ana", "Dental", "Box 3",
-                LocalDateTime.of(2026, 11, 20, 10, 30), estado);
+                LocalDateTime.of(2026, 11, 20, 10, 30), estado, null, "oid-op", "Olga Operadora", "Operador");
     }
 }

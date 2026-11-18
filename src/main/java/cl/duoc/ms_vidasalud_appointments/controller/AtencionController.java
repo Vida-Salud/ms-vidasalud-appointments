@@ -80,6 +80,6 @@ public class AtencionController {
             @PathVariable Long id,
             @Valid @RequestBody CambiarEstadoRequest request) {
 
-        return ResponseEntity.ok(atencionService.cambiarEstado(id, request));
+        return ResponseEntity.ok(atencionService.cambiarEstado(id, request, usuarioActual.obtener()));
     }
 }

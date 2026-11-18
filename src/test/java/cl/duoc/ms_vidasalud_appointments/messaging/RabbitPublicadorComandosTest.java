@@ -34,7 +34,8 @@ class RabbitPublicadorComandosTest {
         try {
             publicador.publicar("cmd.topic", "email.confirmada", new AtencionEstadoCambiadoEvent(
                     42L, "Ana", "Dental", "Box 3", LocalDateTime.of(2026, 11, 20, 10, 30),
-                    EstadoAtencion.CONFIRMADA));
+                    EstadoAtencion.CONFIRMADA, EstadoAtencion.SOLICITADA,
+                    "oid-op", "Olga Operadora", "Operador"));
         } finally {
             MDC.remove(TraceIdFilter.MDC_KEY);
         }
