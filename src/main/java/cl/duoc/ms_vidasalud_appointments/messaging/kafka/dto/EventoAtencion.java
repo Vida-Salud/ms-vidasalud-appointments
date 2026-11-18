@@ -1,7 +1,5 @@
 package cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto;
 
-import cl.duoc.ms_vidasalud_appointments.messaging.dto.DatosAtencion;
-
 import java.time.Instant;
 
 /**
@@ -16,9 +14,10 @@ public record EventoAtencion(
         Instant timestamp,
         String correlationId,
         String traceId,
-        DatosAtencion payload) {
+        DatosEventoAtencion payload) {
 
     public static final int VERSION_ACTUAL = 1;
 
+    public static final String TYPE_CREADA = "APPOINTMENT_CREATED";
     public static final String TYPE_ESTADO_CAMBIADO = "APPOINTMENT_STATUS_CHANGED";
 }

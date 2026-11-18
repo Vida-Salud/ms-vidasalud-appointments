@@ -2,6 +2,7 @@ package cl.duoc.ms_vidasalud_appointments.messaging.kafka;
 
 import cl.duoc.ms_vidasalud_appointments.config.TraceIdFilter;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
+import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.ActorEvento;
 import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.EventoAtencion;
 import cl.duoc.ms_vidasalud_appointments.model.EstadoAtencion;
 import org.junit.jupiter.api.Test;
@@ -40,15 +41,12 @@ class KafkaPublicadorEventosTest {
 
         MDC.put(TraceIdFilter.MDC_KEY, "abc-123");
         try {
-            publicador.publicar(evento());
+            publicador.publicar(evento(EstadoAtencion.CONFIRMADA, EstadoAtencion.SOLICITADA));
         } finally {
             MDC.remove(TraceIdFilter.MDC_KEY);
         }
 
-        ArgumentCaptor<EventoAtencion> captor = ArgumentCaptor.forClass(EventoAtencion.class);
-        verify(template).send(eq(TOPICO), eq("42"), captor.capture());
-
-        EventoAtencion mensaje = captor.getValue();
+        EventoAtencion mensaje = mensajeEnviado();
         assertThat(mensaje.version()).isEqualTo(EventoAtencion.VERSION_ACTUAL);
         assertThat(mensaje.eventId()).isNotBlank();
         assertThat(mensaje.type()).isEqualTo("APPOINTMENT_STATUS_CHANGED");
@@ -58,13 +56,29 @@ class KafkaPublicadorEventosTest {
         assertThat(mensaje.payload().atencionId()).isEqualTo(42L);
         assertThat(mensaje.payload().paciente()).isEqualTo("Ana");
         assertThat(mensaje.payload().estado()).isEqualTo("CONFIRMADA");
+        assertThat(mensaje.payload().estadoAnterior()).isEqualTo("SOLICITADA");
+        assertThat(mensaje.payload().actor()).isEqualTo(new ActorEvento("oid-op", "Olga Operadora", "Operador"));
+    }
+
+    @Test
+    void sinEstadoAnteriorElTypeEsAppointmentCreated() {
+        when(template.send(anyString(), anyString(), any())).thenReturn(new CompletableFuture<>());
+
+        publicador.publicar(evento(EstadoAtencion.SOLICITADA, null));
+
+        EventoAtencion mensaje = mensajeEnviado();
+        assertThat(mensaje.type()).isEqualTo("APPOINTMENT_CREATED");
+        assertThat(mensaje.payload().estado()).isEqualTo("SOLICITADA");
+        assertThat(mensaje.payload().estadoAnterior()).isNull();
+        assertThat(mensaje.payload().actor().id()).isEqualTo("oid-op");
     }
 
     @Test
     void unaKafkaExceptionDeSpringNoSePropaga() {
         when(template.send(anyString(), anyString(), any())).thenThrow(new KafkaException("Send failed"));
 
-        assertThatCode(() -> publicador.publicar(evento())).doesNotThrowAnyException();
+        assertThatCode(() -> publicador.publicar(evento(EstadoAtencion.CONFIRMADA, EstadoAtencion.SOLICITADA)))
+                .doesNotThrowAnyException();
     }
 
     @Test
@@ -72,7 +86,8 @@ class KafkaPublicadorEventosTest {
         when(template.send(anyString(), anyString(), any()))
                 .thenThrow(new org.apache.kafka.common.KafkaException("Failed to construct kafka producer"));
 
-        assertThatCode(() -> publicador.publicar(evento())).doesNotThrowAnyException();
+        assertThatCode(() -> publicador.publicar(evento(EstadoAtencion.CONFIRMADA, EstadoAtencion.SOLICITADA)))
+                .doesNotThrowAnyException();
     }
 
     @Test
@@ -80,11 +95,19 @@ class KafkaPublicadorEventosTest {
         when(template.send(anyString(), anyString(), any()))
                 .thenReturn(CompletableFuture.failedFuture(new KafkaException("broker caído")));
 
-        assertThatCode(() -> publicador.publicar(evento())).doesNotThrowAnyException();
+        assertThatCode(() -> publicador.publicar(evento(EstadoAtencion.CONFIRMADA, EstadoAtencion.SOLICITADA)))
+                .doesNotThrowAnyException();
     }
 
-    private static AtencionEstadoCambiadoEvent evento() {
+    private EventoAtencion mensajeEnviado() {
+        ArgumentCaptor<EventoAtencion> captor = ArgumentCaptor.forClass(EventoAtencion.class);
+        verify(template).send(eq(TOPICO), eq("42"), captor.capture());
+        return captor.getValue();
+    }
+
+    private static AtencionEstadoCambiadoEvent evento(EstadoAtencion estado, EstadoAtencion estadoAnterior) {
         return new AtencionEstadoCambiadoEvent(42L, "Ana", "Dental", "Box 3",
-                LocalDateTime.of(2026, 11, 20, 10, 30), EstadoAtencion.CONFIRMADA);
+                LocalDateTime.of(2026, 11, 20, 10, 30), estado, estadoAnterior,
+                "oid-op", "Olga Operadora", "Operador");
     }
 }

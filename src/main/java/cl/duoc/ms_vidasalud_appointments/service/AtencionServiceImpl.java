@@ -57,6 +57,11 @@ public class AtencionServiceImpl implements AtencionService {
         this.clock = clock;
     }
 
+    /**
+     * Transaccional para que el evento de creación llegue a los {@code @TransactionalEventListener}
+     * (AFTER_COMMIT): sin transacción activa, Spring descarta el evento.
+     */
+    @Transactional
     @Override
     public AtencionResponse crear(CrearAtencionRequest request, Usuario usuario) {
         validarFechaFutura(request.fechaHora());
@@ -65,7 +70,11 @@ public class AtencionServiceImpl implements AtencionService {
             atencion.setPaciente(usuario.nombre());
             atencion.setPacienteId(usuario.id());
         }
-        return toResponse(atencionRepository.save(atencion));
+        Atencion guardada = atencionRepository.save(atencion);
+
+        publicarEvento(guardada, null, usuario);
+
+        return toResponse(guardada);
     }
 
     @Override
@@ -104,22 +113,31 @@ public class AtencionServiceImpl implements AtencionService {
 
     @Transactional
     @Override
-    public AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request) {
+    public AtencionResponse cambiarEstado(Long id, CambiarEstadoRequest request, Usuario usuario) {
         Atencion atencion = buscarEntidad(id);
-        validarTransicion(atencion.getEstado(), request.status());
+        EstadoAtencion estadoAnterior = atencion.getEstado();
+        validarTransicion(estadoAnterior, request.status());
 
         atencion.setEstado(request.status());
         Atencion guardada = atencionRepository.save(atencion);
 
-        eventPublisher.publishEvent(new AtencionEstadoCambiadoEvent(
-                guardada.getId(),
-                guardada.getPaciente(),
-                guardada.getServicio(),
-                guardada.getBox(),
-                guardada.getFechaHora(),
-                guardada.getEstado()));
+        publicarEvento(guardada, estadoAnterior, usuario);
 
         return toResponse(guardada);
+    }
+
+    private void publicarEvento(Atencion atencion, EstadoAtencion estadoAnterior, Usuario actor) {
+        eventPublisher.publishEvent(new AtencionEstadoCambiadoEvent(
+                atencion.getId(),
+                atencion.getPaciente(),
+                atencion.getServicio(),
+                atencion.getBox(),
+                atencion.getFechaHora(),
+                atencion.getEstado(),
+                estadoAnterior,
+                actor.id(),
+                actor.nombre(),
+                actor.rol()));
     }
 
     private Atencion buscarEntidad(Long id) {

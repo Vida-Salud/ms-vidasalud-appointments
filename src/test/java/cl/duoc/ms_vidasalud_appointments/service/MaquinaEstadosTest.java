@@ -47,6 +47,8 @@ class MaquinaEstadosTest {
             "EN_ESPERA>EN_ATENCION", "EN_ESPERA>CANCELADA",
             "EN_ATENCION>CERRADA");
 
+    private static final Usuario OPERADOR = new Usuario("oid-op", "Olga Operadora", true, "Operador");
+
     @Mock AtencionRepository atencionRepository;
     @Mock ApplicationEventPublisher eventPublisher;
     AtencionService service;
@@ -63,7 +65,7 @@ class MaquinaEstadosTest {
     @Test
     void rechazaUnaHoraQueYaPasó() {
         var request = new CrearAtencionRequest("Ana", "Dental", null, LocalDateTime.of(2026, 11, 10, 8, 30));
-        var personal = new Usuario("oid-op", "Operador", true);
+        var personal = new Usuario("oid-op", "Operador", true, "Operador");
         assertThatThrownBy(() -> service.crear(request, personal))
                 .isInstanceOf(DatoInvalidoException.class);
     }
@@ -82,11 +84,11 @@ class MaquinaEstadosTest {
 
         if (VALIDAS.contains(desde + ">" + hacia)) {
             when(atencionRepository.save(any(Atencion.class))).thenAnswer(inv -> inv.getArgument(0));
-            AtencionResponse respuesta = service.cambiarEstado(1L, new CambiarEstadoRequest(hacia));
+            AtencionResponse respuesta = service.cambiarEstado(1L, new CambiarEstadoRequest(hacia), OPERADOR);
             assertThat(respuesta.estado()).isEqualTo(hacia);
             verify(eventPublisher).publishEvent(any(AtencionEstadoCambiadoEvent.class));
         } else {
-            assertThatThrownBy(() -> service.cambiarEstado(1L, new CambiarEstadoRequest(hacia)))
+            assertThatThrownBy(() -> service.cambiarEstado(1L, new CambiarEstadoRequest(hacia), OPERADOR))
                     .isInstanceOf(ReglaNegocioException.class);
             verify(atencionRepository, never()).save(any());
             verifyNoInteractions(eventPublisher);

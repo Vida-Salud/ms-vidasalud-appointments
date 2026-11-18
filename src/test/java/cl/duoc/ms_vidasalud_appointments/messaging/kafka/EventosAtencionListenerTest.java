@@ -27,7 +27,7 @@ class EventosAtencionListenerTest {
     @EnumSource(EstadoAtencion.class)
     void todosLosEstadosSePublican(EstadoAtencion estado) {
         var evento = new AtencionEstadoCambiadoEvent(42L, "Ana", "Dental", "Box 3",
-                LocalDateTime.of(2026, 11, 20, 10, 30), estado);
+                LocalDateTime.of(2026, 11, 20, 10, 30), estado, null, "oid-op", "Olga Operadora", "Operador");
 
         listener.alCambiarEstado(evento);
 

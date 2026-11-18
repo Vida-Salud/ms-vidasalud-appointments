@@ -1,8 +1,9 @@
 package cl.duoc.ms_vidasalud_appointments.messaging.kafka;
 
 import cl.duoc.ms_vidasalud_appointments.config.TraceIdFilter;
-import cl.duoc.ms_vidasalud_appointments.messaging.dto.DatosAtencion;
 import cl.duoc.ms_vidasalud_appointments.messaging.event.AtencionEstadoCambiadoEvent;
+import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.ActorEvento;
+import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.DatosEventoAtencion;
 import cl.duoc.ms_vidasalud_appointments.messaging.kafka.dto.EventoAtencion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,20 +46,26 @@ public class KafkaPublicadorEventos implements PublicadorEventos {
 
     @Override
     public void publicar(AtencionEstadoCambiadoEvent evento) {
+        // Sin estado anterior, la atención se acaba de crear.
+        String type = evento.estadoAnterior() == null
+                ? EventoAtencion.TYPE_CREADA
+                : EventoAtencion.TYPE_ESTADO_CAMBIADO;
         EventoAtencion mensaje = new EventoAtencion(
                 EventoAtencion.VERSION_ACTUAL,
                 UUID.randomUUID().toString(),
-                EventoAtencion.TYPE_ESTADO_CAMBIADO,
+                type,
                 Instant.now(clock),
                 "atencion-" + evento.atencionId(),
                 MDC.get(TraceIdFilter.MDC_KEY),
-                new DatosAtencion(
+                new DatosEventoAtencion(
                         evento.atencionId(),
                         evento.paciente(),
                         evento.servicio(),
                         evento.box(),
                         evento.fechaHora(),
-                        evento.estado().name()));
+                        evento.estado().name(),
+                        evento.estadoAnterior() != null ? evento.estadoAnterior().name() : null,
+                        new ActorEvento(evento.actorId(), evento.actorNombre(), evento.actorRol())));
         String key = String.valueOf(evento.atencionId());
 
         try {
